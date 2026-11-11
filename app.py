@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(page_title="SLA Risk Simulator", page_icon="📦", layout="centered")
-st.title("📦 Supply Chain SLA Late Delivery Simulator")
+st.title("Supply Chain SLA Late Delivery Simulator")
 st.markdown("Sistem Pendukung Keputusan berbasis Deep Learning PyTorch.")
 
 @st.cache_resource
@@ -43,33 +43,39 @@ def load_artifacts():
 
 model, scaler, feature_cols = load_artifacts()
 
-st.subheader("📝 Parameter Pesanan")
+st.subheader("Parameter Pesanan")
 col1, col2 = st.columns(2)
 with col1:
     scheduled_days = st.slider("Target Hari Pengiriman", 0, 4, 4)
     shipping_mode = st.selectbox("Mode Pengiriman", ["Standard Class", "Second Class", "First Class", "Same Day"])
     order_hour = st.slider("Jam Pemesanan", 0, 23, 10)
 with col2:
+    # Nilai ini disembunyikan dari UI tapi tetap dikirim ke model
     nilai_penjualan = 200.00
-    estimasi_keuntungan = 30.04
+    estimasi_keuntungan = 30.00
     item_qty = st.number_input("Kuantitas", min_value=1, max_value=5, value=1)
-    product_price = st.number_input("Harga Produk ($)", value=50.0)
+    product_price = 50.00
 
 market = st.selectbox("Wilayah Pasar", ["Pacific Asia", "Europe", "LATAM", "USCA", "Africa"])
 all_departments = ["Fan Apparel", "Golf", "Footwear", "Apparel", "Book Shop", "Discs Shop", "Fitness", "Outdoor", "Technology", "Other"] 
 
 department = st.selectbox("Departemen", all_departments)
 
-if st.button("🚀 Jalankan Prediksi"):
+if st.button("Jalankan Prediksi"):
     input_df = pd.DataFrame(0.0, index=[0], columns=feature_cols)
     if 'Days_for_shipment__scheduled_' in input_df.columns: input_df['Days_for_shipment__scheduled_'] = scheduled_days
     if 'Order_Hour' in input_df.columns: input_df['Order_Hour'] = order_hour
     if 'After_Cutoff_12PM' in input_df.columns: input_df['After_Cutoff_12PM'] = 1 if order_hour >= 12 else 0
-    if 'Benefit_per_order' in input_df.columns: input_df['Benefit_per_order'] = benefit_val
-    if 'Sales_per_customer' in input_df.columns: input_df['Sales_per_customer'] = sales_val
+    
+    # PERBAIKAN: Menggunakan nama variabel yang benar (estimasi_keuntungan dan nilai_penjualan)
+    if 'Benefit_per_order' in input_df.columns: input_df['Benefit_per_order'] = estimasi_keuntungan
+    if 'Sales_per_customer' in input_df.columns: input_df['Sales_per_customer'] = nilai_penjualan
     if 'Order_Item_Quantity' in input_df.columns: input_df['Order_Item_Quantity'] = item_qty
     if 'Product_Price' in input_df.columns: input_df['Product_Price'] = product_price
-    if 'Benefit_to_Sales_Ratio' in input_df.columns: input_df['Benefit_to_Sales_Ratio'] = benefit_val / sales_val if sales_val != 0 else 0.0
+    
+    # PERBAIKAN: Menghitung rasio menggunakan variabel yang benar
+    if 'Benefit_to_Sales_Ratio' in input_df.columns: 
+        input_df['Benefit_to_Sales_Ratio'] = estimasi_keuntungan / nilai_penjualan if nilai_penjualan != 0 else 0.0
 
     for col_name, val in [("Shipping_Mode", shipping_mode), ("Market", market), ("Department_Name", department)]:
         target_col = f"{col_name}_{val.replace(' ', '_')}"
